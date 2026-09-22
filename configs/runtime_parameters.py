@@ -45,11 +45,8 @@ RECONSTRUCTION_PARAMS = {
 
 
 RUN_SETTINGS = {
-    'moco':True,
-    'motion_fields_in_iter': True,
     'run_visualization': True,
     'save_results': True,
-    'save_intermediate_results': True,
     'print_logs': True,
     **PATHS,
 }
