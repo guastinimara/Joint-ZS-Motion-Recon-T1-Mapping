@@ -41,15 +41,15 @@ def load_patient_iteration_results(
 ):
     """Load and stack saved tensors for one patient.
 
-    Reads ``{output_dir}/{note_output_dir}/<patient_prefix>/it_*/`` in iteration order (or the files in
+    Reads ``{output_dir}/{note_dir}/<patient_prefix>/it_*/`` in iteration order (or the files in
     the patient folder itself if there are no iteration folders) and returns:
         ``all_x``, ``all_p``, ``all_forward_motion``, ``all_inverse_motion``.
     """
     if RUN_SETTINGS is None:
         raise ValueError("RUN_SETTINGS must be provided.")
     output_root = cast(str, RUN_SETTINGS['output_dir'])
-    note_output_dir = cast(str, RUN_SETTINGS['note_output_dir'])
-    patient_output_dir = os.path.join(output_root, note_output_dir, patient_prefix)
+    note_dir = cast(str, RUN_SETTINGS['note_dir'])
+    patient_output_dir = os.path.join(output_root, note_dir, patient_prefix)
     if not os.path.isdir(patient_output_dir):
         raise FileNotFoundError(f'Patient output directory does not exist: {patient_output_dir}')
 
