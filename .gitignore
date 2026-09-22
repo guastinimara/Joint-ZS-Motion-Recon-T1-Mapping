@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+
+.venv/
+venv/
+env/
+
+*.pt
+*.png
+results/
+x_cat_study/
+# Local data paths (template: configs/local_paths_example.py)
+configs/local_paths.py
+src/examples/
+scripts/ablation_study/
+scripts/main_pat_fibrosis.py
