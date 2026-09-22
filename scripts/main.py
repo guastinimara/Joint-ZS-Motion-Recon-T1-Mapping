@@ -4,16 +4,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / 'src')]
 
-import torch
-import mrpro 
 import os
+import tempfile
+
+import torch
+import mrpro
+import zenodo_get
 
 from cardiac_motion.MotionEstimationWithInverse import MotionEstimationWithInverse
 
 from operators.MotionOperator import MotionOperator
 from operators.construct_recon_operators import compute_csm
-
-from data.loading_xcat import load_xcat_data
 
 from utils.MaskImgSize import MaskImgSize
 from utils.rr_threshold_functions import find_valid_rr_threshold, update_rr_expansion_and_compute_rr_mask
@@ -25,16 +26,13 @@ from parameters_estimation.T1ParameterEstimator import T1ParameterEstimator
 
 from configs.runtime_parameters import (
     RUN_SETTINGS,
-    MOTION_NET_PARAMS,
     RECONSTRUCTION_PARAMS,
 )
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Load the simulated XCAT k-space (kdata_simul.h5) from the public Zenodo record.
-import tempfile
-import zenodo_get
 
+# Load the simulated XCAT k-space (kdata_simul.h5) from the public Zenodo record.
 ZENODO_RECORD_ID = '22894393'
 
 # KData.from_file needs a path, so the download goes to a temporary folder that is deleted after loading.
@@ -75,8 +73,7 @@ with torch.no_grad():
         tolerance=RECONSTRUCTION_PARAMS['cg_tolerance']
     )
 
-# Load patient k-space and RR metadata.
-
+# XCAT acquisition parameters.
 # Cardiac phase (RR-interval) index of each of the 54 dynamics.
 rr_idx = torch.tensor([
     7, 7, 8, 8, 9, 9, 9, 10, 10, 10, 0, 0, 1, 1, 2, 2, 3, 3,
@@ -123,10 +120,7 @@ if p_0_ref is None or x_0_ref is None:
 base_rr_idx = rr_idx[0].item()
 current_rr_expansion = rr_expansion_offsets.copy()
 
-#mask = MaskImgSize()
-#mask_file = f'{RUN_SETTINGS["data_root_xcat"]}/mask_parameters_{patient_prefix}.json'
-#mask.load_params(mask_file)
-
+# Image region around the heart used by the motion loss and the SVD regularizer.
 mask = MaskImgSize(h_start=70, w_start=68, h_width=100, w_width=100)
 
 motion_op = MotionOperator(
@@ -151,9 +145,9 @@ motion_estimation = MotionEstimationWithInverse(
 motion_estimation.train_net(
     x_moving.abs(),
     x_0_ref,
-    episodes=MOTION_NET_PARAMS['phi_episodes_start'],
-    steps=MOTION_NET_PARAMS['phi_steps_start'],
-    full_loss_phi=MOTION_NET_PARAMS['full_loss_phi_start']
+    episodes=40,
+    steps=20,
+    full_loss_phi=35
 )
 
 torch.cuda.empty_cache()
@@ -205,9 +199,9 @@ for iteration in range(1, 5):
     motion_estimation.train_net(
             x_moving.abs(), 
             x_ref_updated.detach(), 
-            episodes= MOTION_NET_PARAMS['phi_episodes_iter'], 
-            steps=MOTION_NET_PARAMS['phi_steps_iter'], 
-            full_loss_phi=MOTION_NET_PARAMS['full_loss_phi_iter'])
+            episodes= 30, 
+            steps=20, 
+            full_loss_phi=25)
     
     optimal_phi = MotionOperator.normalized_grid_to_field(motion_op.M_op.grid)
 
@@ -260,7 +254,7 @@ for iteration in range(1, 5):
 
 
 if RUN_SETTINGS['save_results']:
-    output_dir = os.path.join(RUN_SETTINGS['output_dir'], RUN_SETTINGS['note_output_dir'], patient_prefix)
+    output_dir = os.path.join(RUN_SETTINGS['output_dir'], RUN_SETTINGS['note_dir'], 'simulated_data')
     os.makedirs(output_dir, exist_ok=True)
     save_patient_results(
         output_dir=output_dir,

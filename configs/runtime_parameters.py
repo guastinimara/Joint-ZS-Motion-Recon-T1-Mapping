@@ -5,24 +5,15 @@ import math
 import torch
 
 try:
-    from configs.local_paths import EXPERIMENT_FILENAMES, PATHS
+    from configs.local_paths import PATHS
 except ModuleNotFoundError as e:
     raise ModuleNotFoundError(
         "configs/local_paths.py not found: copy configs/local_paths_example.py "
-        "to configs/local_paths.py and set your data paths."
+        "to configs/local_paths.py and set your output paths."
     ) from e
 
 today = datetime.now().strftime("%Y-%m-%d")
 
-
-MOTION_NET_PARAMS = {
-    'phi_episodes_start': 40, 
-    'phi_steps_start': 20,
-    'full_loss_phi_start': 35, 
-    'phi_episodes_iter': 30, 
-    'phi_steps_iter': 20,
-    'full_loss_phi_iter': 25, 
-}
 
 RECONSTRUCTION_PARAMS = {
     'initial_expansion' : [0,1,-1,2],

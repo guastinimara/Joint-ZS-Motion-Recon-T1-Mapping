@@ -34,7 +34,7 @@ class ResultsVisualizer:
 
     Build it with `from_patient` or `from_xcat`, which reconstruct x_moving and the initial
     reference, then call `run()` to write every figure to
-    `{output_dir}/{note_output_dir}/{patient_prefix}/figures_{today}/`.
+    `{output_dir}/{note_dir}/{patient_prefix}/figures_{today}/`.
     """
 
     def __init__(self, patient_prefix, x_moving, x_0_ref, t1_parameter_estimator, mask, RUN_SETTINGS,
@@ -47,7 +47,7 @@ class ResultsVisualizer:
             x_0_ref: initial reference from the RR-selected T1 fit.
             t1_parameter_estimator: T1ParameterEstimator (used for the correlation heatmaps).
             mask: MaskImgSize crop applied to all images.
-            RUN_SETTINGS: config dict with output_dir and note_output_dir.
+            RUN_SETTINGS: config dict with output_dir and note_dir.
             clim: T1 colour range in ms.
             times_to_visualize, slices_to_visualize: time points and row/column indices to plot.
             plot_fields, plot_slices, plot_registrations: which optional figures to create.
@@ -67,7 +67,7 @@ class ResultsVisualizer:
         self.device = device
 
         today = datetime.now().strftime("%Y-%m-%d")
-        self.figure_dir = f'{RUN_SETTINGS["output_dir"]}/{RUN_SETTINGS["note_output_dir"]}/{patient_prefix}/figures_{today}/'
+        self.figure_dir = f'{RUN_SETTINGS["output_dir"]}/{RUN_SETTINGS["note_dir"]}/{patient_prefix}/figures_{today}/'
         os.makedirs(self.figure_dir, exist_ok=True)
 
         (self.all_x,
