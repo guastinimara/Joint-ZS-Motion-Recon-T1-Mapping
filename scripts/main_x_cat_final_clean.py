@@ -27,13 +27,13 @@ from utils.rr_threshold_functions import find_valid_rr_threshold, update_rr_expa
 from utils.save import save_patient_results
 
 
-# Data
-ZENODO_RECORD_ID = "23058873"
+# data
+ZENODO_RECORD_ID = '23058873'
 N_LINES_PER_DYNAMIC = 16  # k-space lines per dynamic image
 N_LINES_OVERLAP = 8  # lines shared by consecutive dynamics (sliding window)
 CSM_SMOOTHING_WIDTH = 15
 
-# Reconstruction
+# reconstruction
 N_ITERATIONS = 4
 CG_ITER_INITIAL = 8
 CG_ITER_RECON = 5
@@ -42,7 +42,7 @@ LAMBDA_1 = 0.1  # weight of the T1 model term
 LAMBDA_2 = 0.05  # weight of the SVD (low-rank) term
 LAMBDA_3 = 0.05 * 0.5  # L1 weight of the SVD coefficients
 
-# Output
+# output
 SAVE_RESULTS = True
 OUTPUT_DIR = Path.cwd()
 
@@ -52,22 +52,23 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # KData.from_file needs a path, so the download goes to a temporary folder that is deleted after loading.
 with tempfile.TemporaryDirectory() as tmp_dir:
     zenodo_get.download(
-        record=ZENODO_RECORD_ID, output_dir=tmp_dir, file_glob=("kdata_simul.h5",)
+        record=ZENODO_RECORD_ID,
+        output_dir=tmp_dir,
+        file_glob=('kdata_simul.h5',),
     )
     kdata_simul = mrpro.data.KData.from_file(
-        os.path.join(tmp_dir, "kdata_simul.h5"),
+        os.path.join(tmp_dir, 'kdata_simul.h5'),
         mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
     ).to(device)
 
-
-# Cardiac phase (RR-interval) index of each of the 54 dynamics.
+# cardiac phase (RR-interval) index of each of the 54 dynamics.
 rr_idx = torch.tensor([
     7, 7, 8, 8, 9, 9, 9, 10, 10, 10, 0, 0, 1, 1, 2, 2, 3, 3,
     4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9, 9, 10, 10, 10, 0, 0,
     1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 7, 8, 8, 9, 9,
 ], dtype=torch.int64)
 
-# Sampling time of each dynamic after the inversion pulse, relative to the first one (s).
+# sampling time of each dynamic after the inversion pulse, relative to the first one (s).
 sampling_time = torch.tensor([
     0.0, 0.0390625, 0.078125, 0.12109375, 0.16015625, 0.19921875,
     0.23828125, 0.27734375, 0.31640625, 0.35546875, 0.3984375, 0.4375,
@@ -81,18 +82,17 @@ sampling_time = torch.tensor([
 ], dtype=torch.float32)
 
 repetition_time = torch.tensor(0.0049395603, dtype=torch.float32)  # s
-
 tau = torch.tensor(0.028, dtype=torch.float32)  # delay after inversion pulse (s)
 nominal_fa = 0.0872664600610733  # nominal flip angle (rad), i.e. 5 degrees
 
 
+# split k-space data into dynamics
 sorted_idx = kdata_simul.header.acq_info.acquisition_time_stamp.squeeze().argsort()
 split_idx = mrpro.utils.split_idx(sorted_idx, N_LINES_PER_DYNAMIC, N_LINES_OVERLAP)
 kdata_simul_dynamic = kdata_simul[..., split_idx, :]
 
 # compute acquisition operator for reconstruction
 csm_op, img_size = compute_csm(kdata_simul, smoothing_width=CSM_SMOOTHING_WIDTH, device=device)
-
 dcf = mrpro.data.DcfData.from_traj_voronoi(kdata_simul_dynamic.traj).to(device)
 dcf_sqrt_op = mrpro.operators.DensityCompensationOp(torch.sqrt(dcf.data))
 dcf_op = dcf.as_operator()
@@ -101,21 +101,21 @@ fourier_op = mrpro.operators.FourierOp.from_kdata(kdata_simul_dynamic).to(device
 acquisition_op = fourier_op @ csm_op
 AHWA_op = (dcf_sqrt_op @ acquisition_op).gram
 
-
 (rhs_no_motion,) = (acquisition_op.H @ dcf_op)(kdata_simul_dynamic.data)
 
+# initial (not motion-corrected) reconstruction of the dynamics
 with torch.no_grad():
-    x_moving, = mrpro.algorithms.optimizers.cg(
+    (x_moving,) = mrpro.algorithms.optimizers.cg(
         AHWA_op,
         rhs_no_motion,
         initial_value=rhs_no_motion,
         max_iterations=CG_ITER_INITIAL,
-        tolerance=CG_TOL
+        tolerance=CG_TOL,
     )
+torch.cuda.empty_cache()
 
 num_dynamics = x_moving.shape[0]
 
-torch.cuda.empty_cache()
 
 t1_parameter_estimator = T1ParameterEstimator(
     sampling_time=sampling_time,
@@ -123,18 +123,19 @@ t1_parameter_estimator = T1ParameterEstimator(
     nominal_flip_angle=nominal_fa,
     device=device,
     tau=tau,
-    opt_type='lbfgs')
-
-
-# Initial T1 parameter fitting with ECG-based mask for motion-compensated references.
-p_0_ref, x_0_ref, rr_expansion_offsets = find_valid_rr_threshold(
-    rr_idx, x_moving, t1_parameter_estimator,
+    opt_type='lbfgs',
 )
 
+# initial T1 parameter fitting with ECG-based mask for motion-compensated references.
+p_0_ref, x_0_ref, rr_expansion_offsets = find_valid_rr_threshold(
+    rr_idx,
+    x_moving,
+    t1_parameter_estimator,
+)
 if p_0_ref is None or x_0_ref is None:
-    raise RuntimeError("Could not find valid RR threshold.")
+    raise RuntimeError('Could not find valid RR threshold.')
 
-# Store rr_idx expansion pattern for iterative updates.
+# store rr_idx expansion pattern for iterative updates.
 base_rr_idx = rr_idx[0].item()
 current_rr_expansion = rr_expansion_offsets.copy()
 
@@ -156,88 +157,88 @@ motion_estimation = MotionEstimationWithInverse(
     device=device,
 )
 
-
-# Initial cardiac motion fields estimation.
+# initial cardiac motion fields estimation.
 motion_estimation.train_net(
     x_moving.abs(),
     x_0_ref,
     episodes=40,
     steps=20,
-    full_loss_phi=35
+    full_loss_phi=35,
 )
-
 torch.cuda.empty_cache()
 
-
-# Compute current registered dynamics and update current x with it
-x_registered, = motion_op.M_op_inv(x_moving)
+# compute current registered dynamics and update current x with it
+(x_registered,) = motion_op.M_op_inv(x_moving)
 x_registered = x_registered.detach()
 x_current = x_registered
 
-
-# Compute mask selection from sinusoidal fit to exclude 15% systolic frame
+# compute mask selection from sinusoidal fit to exclude 15% systolic frames
 optimal_phi = MotionOperator.normalized_grid_to_field(motion_op.M_op.grid)
-
 mask_85_percent = T1ParameterEstimator.select_sinusoidal_mask(
     optimal_phi.detach().cpu(),
 )
 
-# Initial motion-corrected T1 parameter fitting
+# initial motion-corrected T1 parameter fitting
 p, qp = t1_parameter_estimator.fit(x_current, mask=mask_85_percent)
 
-# Initial SVD-based computation
+# initial SVD-based computation
 x_reg_svd, U_op, _ = compute_svd(x_current, mask_roi)
 x_reg_svd = x_reg_svd.detach().unsqueeze(1).unsqueeze(1)
+torch.cuda.empty_cache()
 
-print("Initialization completed.\n")
+print('Initialization completed.')
 
 
-print("Starting iterative loop.\n")
-# Alternate motion update, SVD regularization, and CG reconstruction, MoCo T1 estimation.
+print('Starting iterative loop.')
+# alternate motion estimation, SVD regularization, motion-corrected CG reconstruction
+# and motion-corrected T1 estimation.
 for iteration in range(1, N_ITERATIONS + 1):
-    print(f"Iteration {iteration}/{N_ITERATIONS}\n")
+    print(f'Iteration {iteration}/{N_ITERATIONS}')
 
-    # Update rr_idx expansion for this iteration
-    # Compute mask with current expansion
+    # expand the rr_idx selection and compute the mask of the reference dynamics
     mask_ref, current_rr_expansion = update_rr_expansion_and_compute_rr_mask(
         rr_idx,
         base_rr_idx,
-        current_rr_expansion)
+        current_rr_expansion,
+    )
 
     if not mask_ref.any():
         p_ref_updated = p_0_ref
         x_ref_updated = x_0_ref
     else:
-        # Try fitting with current mask
+        # try fitting with current mask
         p_ref_updated, x_ref_updated = t1_parameter_estimator.fit(
-            x_current, mask=mask_ref)
-
-        # If NaN, fall back to previous values and don't expand further
+            x_current,
+            mask=mask_ref,
+        )
+        # if NaN, fall back to previous values and don't expand further
         if torch.isnan(x_ref_updated).any():
             p_ref_updated = p_0_ref
             x_ref_updated = x_0_ref
 
-    # Update cardiac motion fields estimation
+    # update cardiac motion fields estimation
     motion_estimation.train_net(
-            x_moving.abs(), x_ref_updated.detach(), episodes=30, steps=20, full_loss_phi=25
-        )
-    print(f"phi^({iteration}) updated.\n")
+        x_moving.abs(),
+        x_ref_updated.detach(),
+        episodes=30,
+        steps=20,
+        full_loss_phi=25,
+    )
+    torch.cuda.empty_cache()
+    print(f'phi^({iteration}) updated.')
 
-
-    # Update SVD regularizer with soft-thresholding
-
+    # update SVD regularizer with soft-thresholding
     x_reg_svd, _ = update_svd(
         x_current,
         U_op,
         weight_l1=LAMBDA_3,
         weight_l2=LAMBDA_2,
     )
-    print(f"c_j^({iteration}) updated.\n")
-
+    print(f'c_j^({iteration}) updated.')
 
     with torch.no_grad():
-        # Motion-corrected image reconstruction with updated motion fields and SVD regularization.
-        # Solve the quadratic subproblem with CG.
+        # motion-corrected image reconstruction with updated motion fields and SVD regularization.
+        # solve the quadratic subproblem with CG.
         H = lambda y: (
             motion_op.adjoint(AHWA_op(motion_op.forward(y)[0])[0])[0]
             + LAMBDA_1 * y
@@ -245,7 +246,6 @@ for iteration in range(1, N_ITERATIONS + 1):
         )
 
         (b_0,) = motion_op.adjoint(rhs_no_motion)
-        
         b = (
             b_0
             + LAMBDA_1 * qp
@@ -259,29 +259,27 @@ for iteration in range(1, N_ITERATIONS + 1):
             max_iterations=CG_ITER_RECON,
             tolerance=CG_TOL,
         )
-
-
-    print(f"x^({iteration}) updated.\n")
-
-    torch.cuda.empty_cache()
     x_current = x_next.detach()
+    torch.cuda.empty_cache()
+    print(f'x^({iteration}) updated.')
 
-    # Initialize the parametric maps for further fitting
+    # initialize the parametric maps for further fitting
     p_init = p_ref_updated.detach()
 
     # automatic extraction of systolic frames
     optimal_phi = MotionOperator.normalized_grid_to_field(motion_op.M_op.grid)
     mask_85_percent = T1ParameterEstimator.select_sinusoidal_mask(
-        optimal_phi.detach().cpu()
+        optimal_phi.detach().cpu(),
     )
 
-    # Motion-corrected T1 parameter fitting on updated image, using chosen initialization.
-
-    p, qp = t1_parameter_estimator.fit(x_current, mask=mask_85_percent,
-                                initial_p = p_init)
-
-
+    # motion-corrected T1 parameter fitting on updated image, using chosen initialization.
+    p, qp = t1_parameter_estimator.fit(
+        x_current,
+        mask=mask_85_percent,
+        initial_p=p_init,
+    )
     torch.cuda.empty_cache()
+    print(f'p^({iteration}) updated.')
 
 
 if SAVE_RESULTS:
@@ -291,7 +289,7 @@ if SAVE_RESULTS:
         p=p,
         x_current=x_current,
     )
-    print(f"Results saved to {OUTPUT_DIR}")
+    print(f'Results saved to {OUTPUT_DIR}')
 
-print("Finished processing.")
+print('Finished processing.')
 # %%
