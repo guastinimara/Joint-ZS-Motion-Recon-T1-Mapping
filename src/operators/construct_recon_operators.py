@@ -15,10 +15,6 @@ def compute_csm(kdata,smoothing_width=11,device='cpu'):
         csm_operator: operator applying the coil sensitivities.
         img_size: (ny, nx) of the images.
     """
-
-    #idx_csm = torch.as_tensor(torch.arange(0,100))[None,:]
-    #kdata_csm = kdata.split_k1_into_other(idx_csm, other_label='repetition')
-    #kdata = kdata_csm
     kdata = kdata.to(device)
     dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
     dcf_operator = dcf_operator.to(device)
@@ -30,8 +26,6 @@ def compute_csm(kdata,smoothing_width=11,device='cpu'):
     
     img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*adjoint_operator(kdata.data), kdata.header)
     csm = mrpro.data.CsmData.from_idata_walsh(img_coilwise, smoothing_width=smoothing_width)
-    # csm = mrpro.data.CsmData.from_kdata_inati(kdata, 
-    #                                           smoothing_width=smoothing_width)
     csm_operator = csm.as_operator()
     img_size = csm.data.shape[-2:]
     
