@@ -14,6 +14,4 @@ today = datetime.now().strftime("%Y-%m-%d")
 PATHS = {
     # Root folder for all results (one subfolder per day)
     'output_dir': f'/path/to/results/{today}/',
-    # Subfolder inside output_dir for this run, e.g. to tell experiments apart
-    'note_dir': '',
 }

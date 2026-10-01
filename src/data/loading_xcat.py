@@ -120,8 +120,8 @@ def get_kdata(RECONSTRUCTION_PARAMS, RUN_SETTINGS, device):
                 AHWA_op,
                 rhs,
                 initial_value=rhs,
-                max_iterations=RECONSTRUCTION_PARAMS['cg_iterations_initial'],
-                tolerance=RECONSTRUCTION_PARAMS['cg_tolerance']
+                max_iterations=RECONSTRUCTION_PARAMS['cg_iter_initial'],
+                tolerance=RECONSTRUCTION_PARAMS['cg_tol']
             )
             
     ref_max = x_moving_vol.abs().max().item()
