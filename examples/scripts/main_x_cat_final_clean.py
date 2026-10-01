@@ -14,7 +14,7 @@ import mrpro
 import torch
 import zenodo_get
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / 'src')]
 
 from cardiac_motion.MotionEstimationWithInverse import MotionEstimationWithInverse
