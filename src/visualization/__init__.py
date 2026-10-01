@@ -1,1 +1,1 @@
-"""Plotting utilities for images, motion fields, iterations and final results."""
+"""T1 colormap used in the figures."""

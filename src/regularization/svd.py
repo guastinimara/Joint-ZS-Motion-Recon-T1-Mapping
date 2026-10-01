@@ -48,7 +48,6 @@ def compute_svd(x_full,mask, divide_by_n=False):
     mu, std = xp.mean(dim=dim, keepdim=True), xp.std(dim=dim, keepdim=True)
     xp = (xp - mu) / std
     
-    sigma = 0.3
     target = xp.T.to(device)
 
     alpha = 1e0
@@ -87,7 +86,6 @@ def update_svd(x, U_op,map=None,weight_l1=1.,weight_l2=1., divide_by_n=False):
     mu, std = xp.mean(dim=(-1,), keepdim=True), xp.std(dim=(-1,), keepdim=True)
     xp = (xp - mu) / std
     
-    sigma = 0.3
     target = xp.T.to(x.device)
 
     

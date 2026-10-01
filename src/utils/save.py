@@ -8,29 +8,35 @@ from typing import cast
 
 
 def save_patient_results(output_dir, 
+                         iteration=None,
                          motion_op=None, 
-                         p=None, x_current=None):
-    """Save final outputs for one patient as .pt files in output_dir.
+                         p=None, 
+                         x_current=None):
+    """Save outputs for one patient as .pt files in output_dir.
+
+    Filenames end with ``_it{iteration}`` if iteration is given, otherwise ``_final``.
 
     Args:
         output_dir: destination folder (must exist).
-        motion_op: MotionOperator; saved as forward_motion_field.pt / inverse_motion_field.pt.
-        p: parameter maps; saved as final_p.pt.
-        x_current: images; saved as final_x.pt.
+        iteration: iteration index used as filename suffix; None for final results.
+        motion_op: MotionOperator; saved as forward_motion_field{suffix}.pt / inverse_motion_field{suffix}.pt.
+        p: parameter maps; saved as p{suffix}.pt.
+        x_current: images; saved as x{suffix}.pt.
     """
-    
+    suffix = f'_it{iteration}' if iteration is not None else '_final'
+
     if motion_op is not None:
         forward_field = MotionOperator.normalized_grid_to_field(motion_op.M_op.grid.detach())
         inverse_field = MotionOperator.normalized_grid_to_field(motion_op.M_op_inv.grid.detach())
 
-        torch.save(forward_field.cpu(), os.path.join(output_dir, 'forward_motion_field.pt'))
-        torch.save(inverse_field.cpu(), os.path.join(output_dir, 'inverse_motion_field.pt'))
+        torch.save(forward_field.cpu(), os.path.join(output_dir, f'forward_motion_field{suffix}.pt'))
+        torch.save(inverse_field.cpu(), os.path.join(output_dir, f'inverse_motion_field{suffix}.pt'))
     
     if p is not None:
-        torch.save(p.detach().cpu(), os.path.join(output_dir, 'final_p.pt'))
+        torch.save(p.detach().cpu(), os.path.join(output_dir, f'p{suffix}.pt'))
     
     if x_current is not None:
-        torch.save(x_current.detach().cpu(), os.path.join(output_dir, 'final_x.pt'))
+        torch.save(x_current.detach().cpu(), os.path.join(output_dir, f'x{suffix}.pt'))
 
 
 def load_patient_iteration_results(
@@ -41,15 +47,15 @@ def load_patient_iteration_results(
 ):
     """Load and stack saved tensors for one patient.
 
-    Reads ``{output_dir}/{note_dir}/<patient_prefix>/it_*/`` in iteration order (or the files in
+    Reads ``{output_dir}/{note_output_dir}/<patient_prefix>/it_*/`` in iteration order (or the files in
     the patient folder itself if there are no iteration folders) and returns:
         ``all_x``, ``all_p``, ``all_forward_motion``, ``all_inverse_motion``.
     """
     if RUN_SETTINGS is None:
         raise ValueError("RUN_SETTINGS must be provided.")
     output_root = cast(str, RUN_SETTINGS['output_dir'])
-    note_dir = cast(str, RUN_SETTINGS['note_dir'])
-    patient_output_dir = os.path.join(output_root, note_dir, patient_prefix)
+    note_output_dir = cast(str, RUN_SETTINGS['note_output_dir'])
+    patient_output_dir = os.path.join(output_root, note_output_dir, patient_prefix)
     if not os.path.isdir(patient_output_dir):
         raise FileNotFoundError(f'Patient output directory does not exist: {patient_output_dir}')
 

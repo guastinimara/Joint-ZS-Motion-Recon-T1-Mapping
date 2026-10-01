@@ -20,9 +20,9 @@ RECONSTRUCTION_PARAMS = {
     'lambda1': 0.1, 
     'lambda2': 0.05,
     'lambda3': 0.05 * 0.5, 
-    'cg_iterations_initial': 8, 
-    'cg_iterations_opt_pb': 5, 
-    'cg_tolerance': 1e-5,  
+    'cg_iter_initial': 8, 
+    'cg_iter_opt_pb': 5, 
+    'cg_tol': 1e-5,  
     'fitting_opt_type':'lbfgs', # 'adam', 
     'divide_by_n': False,
     'lbfgs_tolerance_grad'  : 1e-8, 
@@ -36,9 +36,8 @@ RECONSTRUCTION_PARAMS = {
 
 
 RUN_SETTINGS = {
-    'run_visualization': True,
-    'save_results': True,
-    'print_logs': True,
+    'save_results': False,
+    'print_logs': False,
     **PATHS,
 }
 

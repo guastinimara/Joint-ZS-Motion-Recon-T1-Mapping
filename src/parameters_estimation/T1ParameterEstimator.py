@@ -52,11 +52,11 @@ class T1ParameterEstimator:
         self.tau = tau
         self.sampling_time += self.tau
         
-        print('=' * 50)
-        print('Sampling time:', self.sampling_time)
-        print('Repetition time:', self.repetition_time)
-        print('Nominal flip angle:', self.nominal_flip_angle)
-        print('=' * 50)
+        # print('=' * 50)
+        # print('Sampling time:', self.sampling_time)
+        # print('Repetition time:', self.repetition_time)
+        # print('Nominal flip angle:', self.nominal_flip_angle)
+        # print('=' * 50)
         
         self.model_op_full_standard = TransientSteadyStateWithPreparation(
             sampling_time=self.sampling_time,
