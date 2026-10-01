@@ -72,6 +72,9 @@ OUTPUT_DIR = Path.cwd()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# the motion network is trained from a random initialization, so fix the seed to make the run reproducible.
+torch.manual_seed(0)
+
 # KData.from_file needs a path, so the download goes to a temporary folder that is deleted after loading.
 with tempfile.TemporaryDirectory() as tmp_dir:
     zenodo_get.download(
