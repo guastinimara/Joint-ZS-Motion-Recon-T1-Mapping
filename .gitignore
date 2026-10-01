@@ -17,3 +17,6 @@ configs/
 src/examples/
 scripts/ablation_study/
 scripts/main_pat_fibrosis.py
+
+src/parameters_estimation/T1ParameterEstimatorWithBeta.py
+src/data/
