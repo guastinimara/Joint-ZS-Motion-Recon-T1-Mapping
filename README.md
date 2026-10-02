@@ -12,29 +12,33 @@ reconstructed, with no training data and no ground-truth motion or maps.
 
 ## Method
 
-The k-space data $\mathbf{y}$ are modelled as
-$\mathbf{y} = \mathbf{A}\,\mathbf{M}_{\boldsymbol{\phi}}\,\mathbf{Q}(\mathbf{p}) + \boldsymbol{\epsilon}$,
-where $\mathbf{Q}$ is the inversion-recovery signal model, $\mathbf{M}_{\boldsymbol{\phi}}$ the
-cardiac motion operator and $\mathbf{A}$ the coil-sensitivity + non-Cartesian Fourier operator.
+The k-space data $`\mathbf{y}`$ are modelled as
+
+```math
+\mathbf{y} = \mathbf{A}\,\mathbf{M}_{\boldsymbol{\phi}}\,\mathbf{Q}(\mathbf{p}) + \boldsymbol{\epsilon},
+```
+
+where $`\mathbf{Q}`$ is the inversion-recovery signal model, $`\mathbf{M}_{\boldsymbol{\phi}}`$ the
+cardiac motion operator and $`\mathbf{A}`$ the coil-sensitivity + non-Cartesian Fourier operator.
 The motion-corrected parameters are then given by
 
-$$
+```math
 \mathbf{p}_{\text{MoCo}},\ \boldsymbol{\phi}
 \in \arg\min_{\mathbf{p},\,\boldsymbol{\phi}}
 \big\|\mathbf{A}\,\mathbf{M}_{\boldsymbol{\phi}}\,\mathbf{Q}(\mathbf{p}) - \mathbf{y}\big\|_2^2 .
-$$
+```
 
 With variable splitting, this is solved by alternating two subproblems:
 
-$$
+```math
 \begin{cases}
 \boldsymbol{\theta}^{*} \in \arg\min_{\boldsymbol{\theta}} \ \mathcal{L}\big(\boldsymbol{\phi}_{\boldsymbol{\theta}},\boldsymbol{\phi}^{-1}_{\boldsymbol{\theta}},\mathbf{x}_{\text{m}},\mathbf{x}_{\text{r}}\big) & \text{(a) motion estimation} \\[4pt]
 \mathbf{p}^{*},\mathbf{x}^{*},\mathbf{c}_j^{*} \in \arg\min_{\mathbf{p},\mathbf{x},\mathbf{c}_j} \ \mathcal{F}\big(\mathbf{p},\mathbf{x},\mathbf{c}_j,\boldsymbol{\phi}_{\boldsymbol{\theta}^{*}}\big) & \text{(b) MoCo reconstruction + T1 fit}
 \end{cases}
-$$
+```
 
-Here $\mathbf{x}_{\text{m}}$ are the moving dynamics: a plain CG reconstruction of the
-undersampled data, with no motion correction and no regularization. $\mathbf{x}_{\text{r}}$ is a
+Here $`\mathbf{x}_{\text{m}}`$ are the moving dynamics: a plain CG reconstruction of the
+undersampled data, with no motion correction and no regularization. $`\mathbf{x}_{\text{r}}`$ is a
 synthetic motion-compensated reference obtained by fitting the signal model to the frames of
 (almost) the same cardiac phase, and it is refined across the outer iterations.
 
@@ -42,11 +46,11 @@ Each outer iteration updates one block at a time:
 
 | Step | Variable | Solver |
 |:--:|:--:|---|
-| 0 | $\mathbf{x}_{\text{r}}$ | reference: signal-model fit on an expanding, ECG-selected subset of frames |
-| 1 | $\boldsymbol{\phi},\ \boldsymbol{\phi}^{-1}$ | zero-shot CNN registration (mutual information + k-space data consistency + smoothness) |
-| 2 | $\mathbf{c}_j$ | SVD low-rank coefficients, soft-thresholding |
-| 3 | $\mathbf{x}$ | conjugate gradient on the quadratic subproblem |
-| 4 | $\mathbf{p}$ | L-BFGS fit of the signal model, excluding the most systolic frames |
+| 0 | $`\mathbf{x}_{\text{r}}`$ | reference: signal-model fit on an expanding, ECG-selected subset of frames |
+| 1 | $`\boldsymbol{\phi},\ \boldsymbol{\phi}^{-1}`$ | zero-shot CNN registration (mutual information + k-space data consistency + smoothness) |
+| 2 | $`\mathbf{c}_j`$ | SVD low-rank coefficients, soft-thresholding |
+| 3 | $`\mathbf{x}`$ | conjugate gradient on the quadratic subproblem |
+| 4 | $`\mathbf{p}`$ | L-BFGS fit of the signal model, excluding the most systolic frames |
 
 The full derivation, with all loss terms, is in the
 [notebook](examples/notebooks/xcat_motion_corrected_t1.ipynb).
@@ -90,7 +94,7 @@ python examples/scripts/main.py
 ### Main building blocks
 
 **T1 estimation.** `T1ParameterEstimator` wraps the transient steady-state inversion-recovery
-model and fits $(M_0, \alpha, T_1)$ with L-BFGS, optionally on a subset of frames:
+model and fits $`(M_0, \alpha, T_1)`$ with L-BFGS, optionally on a subset of frames:
 
 ```python
 from parameters_estimation.T1ParameterEstimator import T1ParameterEstimator
