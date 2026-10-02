@@ -1,0 +1,16 @@
+# Install a CUDA build of PyTorch first if needed (https://pytorch.org/get-started/locally/),
+# otherwise pip pulls the default build as a dependency of mrpro.
+torch>=2.3.1
+mrpro==0.260420
+
+numpy
+scipy
+matplotlib
+einops>=0.7
+zenodo_get>=2.0
+
+# notebook
+ipykernel
+
+# tests
+pytest

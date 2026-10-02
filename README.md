@@ -57,21 +57,29 @@ The full derivation, with all loss terms, is in the
 
 ## Installation
 
-> TODO: finalize (pinned versions, environment file).
-
 ```bash
 git clone https://github.com/guastinimara/Joint-ZS-Motion-Recon-T1-Mapping.git
 cd Joint-ZS-Motion-Recon-T1-Mapping
 
-conda create -n zs-moco python=3.10
+conda create -n zs-moco python=3.11
 conda activate zs-moco
+
+# optional: install the PyTorch build matching your CUDA version first, e.g.
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
 pip install -r requirements.txt
 ```
 
-Main dependencies: [PyTorch](https://pytorch.org/),
-[MRpro](https://github.com/PTB-MR/mrpro) (TODO: version), `numpy`, `scipy`, `matplotlib`,
-`einops`, `zenodo_get`. A CUDA GPU is strongly recommended. The code falls back to the CPU if
-none is available.
+Main dependencies: [PyTorch](https://pytorch.org/) (>= 2.3.1),
+[MRpro](https://github.com/PTB-MR/mrpro) (v0.260420), `numpy`, `scipy`, `matplotlib`,
+`einops`, `zenodo_get`. Python 3.10 to 3.13 is supported, as required by MRpro. A CUDA GPU is
+strongly recommended. The code falls back to the CPU if none is available.
+
+To check the installation, run the tests from the repository root:
+
+```bash
+pytest tests
+```
 
 ## Usage
 
