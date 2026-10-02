@@ -10,8 +10,7 @@ env/
 
 *.pt
 *.png
-results/
-# Local data paths (template: configs/local_paths_example.py)
+src/results/
 src/examples/
 src/parameters_estimation/T1ParameterEstimatorWithBeta.py
 src/data/
