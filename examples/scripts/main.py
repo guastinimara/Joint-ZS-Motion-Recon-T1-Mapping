@@ -28,7 +28,7 @@ from utils.save import save_patient_results
 
 
 # data
-ZENODO_RECORD_ID = '23058873'
+ZENODO_RECORD_ID = '23085535'
 N_LINES_PER_DYNAMIC = 16  # k-space lines per dynamic image
 N_LINES_OVERLAP = 8  # lines shared by consecutive dynamics (sliding window)
 CSM_SMOOTHING_WIDTH = 15
@@ -81,6 +81,8 @@ with tempfile.TemporaryDirectory() as tmp_dir:
         record=ZENODO_RECORD_ID,
         output_dir=tmp_dir,
         file_glob=('kdata_simul.h5',),
+        timeout=120,  # the default of 15 s is too short behind slow proxies
+        retry_attempts=3,
     )
     kdata_simul = mrpro.data.KData.from_file(
         os.path.join(tmp_dir, 'kdata_simul.h5'),
