@@ -33,8 +33,8 @@ class MotionEstimationWithInverse:
                  n_filters=32,
                  weight_dc=0.5,
                  weight_mi=0.5,
-                 lambd=0.01,
-                 mu=0.05,
+                 lambd=0.05,
+                 mu=0.01,
                  device='cpu'):
         """
         Args:

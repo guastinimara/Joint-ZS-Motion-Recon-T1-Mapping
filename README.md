@@ -64,8 +64,10 @@ cd Joint-ZS-Motion-Recon-T1-Mapping
 conda create -n zs-moco python=3.11
 conda activate zs-moco
 
-# optional: install the PyTorch build matching your CUDA version first, e.g.
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# install the PyTorch build matching your GPU driver first. Check the highest CUDA version
+# your driver supports with `nvidia-smi` (top right, "CUDA Version"), then pick a build
+# that is not newer, e.g. for CUDA >= 12.6:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
 pip install -r requirements.txt
 ```
@@ -81,10 +83,14 @@ To check the installation, run the tests from the repository root:
 pytest tests
 ```
 
+If the code runs on the CPU although `nvidia-smi` shows a GPU, the installed PyTorch was
+built for a newer CUDA version than your driver supports (PyTorch prints *"The NVIDIA driver
+on your system is too old"*). Reinstall PyTorch from a matching index URL as shown above.
+
 ## Usage
 
 Both entry points run the full pipeline on simulated k-space data $\mathbf{y}$, available on
-[Zenodo](https://zenodo.org/records/23058873) and downloaded automatically. The data were
+[Zenodo](https://zenodo.org/records/23085535) and downloaded automatically. The data were
 simulated to match the in-vivo acquisition. The anatomy and the cardiac motion come from the
 XCAT framework, and piecewise-constant parameter values are assigned to each tissue. The
 resulting dynamics are deformed with the XCAT motion and sampled with the real acquisition
@@ -153,8 +159,10 @@ Output of the notebook on the XCAT phantom: T1 map without motion correction, wi
 proposed method, and the ground-truth reference. This corresponds to Figure X of the
 [paper](#citation).
 
-<!-- TODO: export the final notebook figure -->
-<p align="center"><img src="docs/xcat_t1_results.png" width="800"></p>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/REPLACE_WITH_ASSET_ID" width="800"
+       alt="XCAT T1 maps: no motion correction, proposed method, reference">
+</p>
 
 ## Repository structure
 
