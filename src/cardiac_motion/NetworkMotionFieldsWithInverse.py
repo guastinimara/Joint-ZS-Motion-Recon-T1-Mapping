@@ -174,8 +174,7 @@ class NetworkMotionFieldsWithInverse(nn.Module):
                  int_downsize=2,
                  unet_half_res=False,
                  n_enc_stages=5,
-                 n_filters = 64,
-                 refinement=False
+                 n_filters = 64
                  ):
         """
         Args:
@@ -187,13 +186,11 @@ class NetworkMotionFieldsWithInverse(nn.Module):
             int_steps: scaling and squaring steps (0 disables integration).
             int_downsize: integrate at a lower resolution by this factor.
             unet_half_res: if True, skip the downsizing before integration.
-            refinement: use extra refinement convolutions (requires ``refinement_convs``).
         """
         super().__init__()
         
         # internal flag indicating whether to return field or integrated warp during inference
         self.training = True
-        self.refinement = refinement
         
     
         # configure core unet model
@@ -255,8 +252,6 @@ class NetworkMotionFieldsWithInverse(nn.Module):
             
         #print('x.shape after unet : ', x.shape)
         x = self.c1(x)
-        if self.refinement:
-            x = self.refinement_convs(x)
             
         fields = self.make_field(x)
         

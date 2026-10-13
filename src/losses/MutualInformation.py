@@ -167,8 +167,6 @@ class MutualInformation(nn.Module):
         input1_grad = rearrange(self.nabla(input1), 'b ch dir h w -> b ch h w dir')
         input2_grad = rearrange(self.nabla(input2), 'b ch dir h w -> b ch h w dir')
         
-        torch.save(input2_grad, "check_grad.pt")
-        
         input1_grad = normalize(torch.sqrt(input1_grad[..., 0] ** 2 + input1_grad[..., 1] ** 2)) * 255
         input2_grad = normalize(torch.sqrt(input2_grad[..., 0] ** 2 + input2_grad[..., 1] ** 2)) * 255
         

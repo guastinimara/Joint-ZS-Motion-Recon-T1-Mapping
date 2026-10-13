@@ -1,14 +1,14 @@
 """Voxel-wise estimation of M0, T1 and flip angle from the dynamic images.
 
-Uses the mrpro inversion-recovery transient steady state model (optionally with an extra ``beta``
-parameter) and fits it with L-BFGS or Adam under box constraints.
+Uses the mrpro inversion-recovery transient steady state model
+and fits it with L-BFGS or Adam under box constraints.
 """
 import torch
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from mrpro.operators import ConstraintsOp
-from mrpro.operators.models import TransientSteadyStateWithPreparation,TransientSteadyStateWithPreparationBeta
+from mrpro.operators.models import TransientSteadyStateWithPreparation
 from mrpro.operators.functionals import MSE
 from mrpro.algorithms.optimizers import lbfgs, adam
 from einops import rearrange
@@ -65,12 +65,6 @@ class T1ParameterEstimator:
             delay_after_preparation=tau
         ).to(self.device)
         
-        self.model_op_full_beta = TransientSteadyStateWithPreparationBeta(
-            sampling_time=self.sampling_time,
-            repetition_time=self.repetition_time,
-            m0_scaling_preparation=-1.0,
-            delay_after_preparation=tau
-        ).to(self.device)
         
         self.opt_type = opt_type
         if self.opt_type not in ['lbfgs', 'adam']:
@@ -78,40 +72,30 @@ class T1ParameterEstimator:
         
 
     @staticmethod
-    def construct_model_op(sampling_time, repetition_time, tau=0., device='cpu', beta_model=False, magnitude_model=False):
+    def construct_model_op(sampling_time, repetition_time, tau=0., device='cpu', magnitude_model=False):
         """
         Construct the signal model operator for a given sampling time.
 
         Args:
             sampling_time, repetition_time, tau: sequence timings.
             device: torch device.
-            beta_model: use the model with the additional beta parameter.
             magnitude_model: fit the magnitude of the signal instead of the complex signal.
         """
-        if not beta_model:
-            model_op = TransientSteadyStateWithPreparation(
-                sampling_time=sampling_time,
-                repetition_time=repetition_time,
-                m0_scaling_preparation=-1.0,
-                delay_after_preparation=tau
-            ).to(device)
-        else:
-            model_op = TransientSteadyStateWithPreparationBeta(
-                sampling_time=sampling_time,
-                repetition_time=repetition_time,
-                m0_scaling_preparation=-1.0,
-                delay_after_preparation=tau
-            ).to(device)
-            
+        
+        model_op = TransientSteadyStateWithPreparation(
+            sampling_time=sampling_time,
+            repetition_time=repetition_time,
+            m0_scaling_preparation=-1.0,
+            delay_after_preparation=tau
+        ).to(device)
+       
         if magnitude_model:
             return mrpro.operators.MagnitudeOp() @ model_op
         else:
             return model_op
     
     @staticmethod
-    def construct_functional(x_m, model_op, beta_model=False,
-                             beta_sigmoid=2.0,
-                             full_stacks=False,
+    def construct_functional(x_m, model_op,
                              recon_params=None,
                              magnitude_model=False):
         """
@@ -120,9 +104,6 @@ class T1ParameterEstimator:
         Args:
             x_m: normalized target images.
             model_op: signal model from ``construct_model_op``.
-            beta_model: add bounds for beta.
-            beta_sigmoid: sharpness of the sigmoid in the constraints (beta model only).
-            full_stacks: unused.
             recon_params: config dict with 't1_constraints' and 'alpha_constraints'; defaults if None.
             magnitude_model: compare magnitudes.
 
@@ -130,47 +111,25 @@ class T1ParameterEstimator:
             functional, constraints_op.
         """
     
-        if not beta_model:
-            if recon_params is None:
-                constraints_op = ConstraintsOp(
-                    bounds=(
-                        (None, None),  # M0 is not constrained
-                        (0.1, 6.),  # T1 is constrained
-                        (math.radians(1), math.radians(9))  # alpha is constrained
-                    ),
-                    beta_sigmoid=2.0
-                ).to(x_m.device)
-            else:
-                constraints_op = ConstraintsOp(
-                                    bounds=(
-                                        (None, None),  # M0 is not constrained
-                                        recon_params['t1_constraints'],  # T1 is constrained
-                                        recon_params['alpha_constraints']  # alpha is constrained
-                                    ),
-                                    beta_sigmoid=2.0
-                                ).to(x_m.device)
-        elif beta_model:
-            if recon_params is None:
-                constraints_op = ConstraintsOp(
-                    bounds=(
-                        (None, None),  # M0 is not constrained
-                        (0.1, 6.),  # T1 is constrained
-                        (math.radians(1), math.radians(9)),# alpha is constrained
-                        (-0.5, 2.5)  # beta is constrained
-                    ),
-                    beta_sigmoid=2.0
-                ).to(x_m.device)
-            else:
-                constraints_op = ConstraintsOp(
-                    bounds=(
-                        (None, None),  # M0 is not constrained
-                        recon_params['t1_constraints'],  # T1 is constrained
-                        recon_params['alpha_constraints'],# alpha is constrained
-                        (-0.5, 2.5)  # beta is constrained
-                    ),
-                    beta_sigmoid=beta_sigmoid #5.
-                ).to(x_m.device)
-        
+
+        if recon_params is None:
+            constraints_op = ConstraintsOp(
+                bounds=(
+                    (None, None),  # M0 is not constrained
+                    (0.1, 6.),  # T1 is constrained
+                    (math.radians(1), math.radians(9))  # alpha is constrained
+                ),
+                beta_sigmoid=2.0
+            ).to(x_m.device)
+        else:
+            constraints_op = ConstraintsOp(
+                                bounds=(
+                                    (None, None),  # M0 is not constrained
+                                    recon_params['t1_constraints'],  # T1 is constrained
+                                    recon_params['alpha_constraints']  # alpha is constrained
+                                ),
+                                beta_sigmoid=2.0
+                            ).to(x_m.device)
         
         if magnitude_model:
             mse_loss = MSE(x_m.abs()).to(x_m.device)
@@ -180,9 +139,8 @@ class T1ParameterEstimator:
         functional = mse_loss @ model_op @ constraints_op
         return functional, constraints_op
 
-    def fit(self, x, mask=None, beta_model=False, full_stacks=False,
+    def fit(self, x, mask=None,
                 initial_p=None,
-                beta_sigmoid=2.0, 
                 callback=None,
                 recon_params=None):
         """
@@ -191,8 +149,6 @@ class T1ParameterEstimator:
         Args:
             x: dynamic images (t, ..., ny, nx).
             mask: optional boolean selection of dynamics to use in the fit.
-            beta_model: fit the additional beta parameter.
-            full_stacks: unused (passed to ``construct_functional``).
             initial_p: optional (m0, flip_angle, t1) starting values; otherwise first image, T1=1 s
                 and the nominal flip angle.
             beta_sigmoid: sharpness of the constraint sigmoid.
@@ -200,7 +156,7 @@ class T1ParameterEstimator:
             recon_params: config dict with L-BFGS settings and constraints.
 
         Returns:
-            p_moco: stacked [m0, flip_angle, t1(, beta)].
+            p_moco: stacked [m0, flip_angle, t1.
             qp_moco: model images for all dynamics, rescaled to the input intensity.
         """
         # Compute sampling times (assumes mask_function is provided)
@@ -223,7 +179,6 @@ class T1ParameterEstimator:
             sampling_time, 
             self.repetition_time, 
             tau=self.tau,device=self.device, 
-            beta_model=beta_model,
             magnitude_model=magnitude_model)
         
         
@@ -233,9 +188,6 @@ class T1ParameterEstimator:
         factor = x_masked.abs().max()
         x_m = x_m / factor
         functional, constraints_op = T1ParameterEstimator.construct_functional(x_m, model_op,
-                                                               beta_model=beta_model, 
-                                                               full_stacks=full_stacks,
-                                                               beta_sigmoid=beta_sigmoid,
                                                                recon_params=recon_params,
                                                                magnitude_model=magnitude_model)
 
@@ -255,12 +207,8 @@ class T1ParameterEstimator:
             m0_start = m0_start.to(self.device)
             flip_angle_start = flip_angle_start.to(self.device)
             t1_start = t1_start.to(self.device)
-        
-        if beta_model:
-            beta_start = torch.ones(m0_start.shape).to(self.device)
-            initial_parameters = constraints_op.inverse(m0_start, t1_start, flip_angle_start, beta_start)
-        else:
-            initial_parameters = constraints_op.inverse(m0_start, t1_start, flip_angle_start)
+       
+        initial_parameters = constraints_op.inverse(m0_start, t1_start, flip_angle_start)
             
         
         if self.opt_type == 'adam':
@@ -301,47 +249,26 @@ class T1ParameterEstimator:
                     tolerance_change=1e-10,
                 )
         # Extract parameters
-        if not beta_model:
-            m0, t1, flip_angle = (p.detach().squeeze() for p in constraints_op(*result))
-        else:
-            m0, t1, flip_angle, beta = (p.detach().squeeze() for p in constraints_op(*result))
-
+        
+        m0, t1, flip_angle = (p.detach().squeeze() for p in constraints_op(*result))
+       
         m0 = m0.unsqueeze(0).unsqueeze(0).unsqueeze(0)
         t1 = t1.unsqueeze(0).unsqueeze(0).unsqueeze(0)
         flip_angle = flip_angle.unsqueeze(0).unsqueeze(0).unsqueeze(0)
-        if not beta_model:
-            p_moco = torch.stack([m0, flip_angle, t1], dim=0)
         
-        else:
-            beta = beta.unsqueeze(0).unsqueeze(0).unsqueeze(0)
-            p_moco = torch.stack([m0, flip_angle, t1, beta], dim=0)
+        p_moco = torch.stack([m0, flip_angle, t1], dim=0)
         
-        
-        #print('m0 shape:', m0.shape)
-        #print('t1 shape:', t1.shape)
-        #print('flip angle shape:', flip_angle.shape)
-        
-        
-        if not beta_model:
-            qp_moco, = self.model_op_full_standard.forward(m0=m0, t1=t1, flip_angle=flip_angle)
-        else:
-            qp_moco, = self.model_op_full_beta.forward(m0=m0, t1=t1, flip_angle=flip_angle, beta=beta)
-        #print('qp_moco shape:', qp_moco.shape)
+        qp_moco, = self.model_op_full_standard.forward(m0=m0, t1=t1, flip_angle=flip_angle)
         qp_moco = qp_moco * factor
         return p_moco, qp_moco
     
     def get_params(self, p):
         """
-        Split stacked parameters into m0, flip_angle, t1 and beta (None if not present).
+        Split stacked parameters into m0, flip_angle, t1.
         """
         p = p.squeeze()
-        if p.shape[0] == 4:
-            m0, flip_angle, t1, beta = p[0], p[1], p[2], p[3]
-        else:
-            m0, flip_angle, t1 = p[0], p[1], p[2]
-            beta = None
-            
-        return m0, flip_angle, t1, beta
+        m0, flip_angle, t1 = p[0], p[1], p[2]
+        return m0, flip_angle, t1
 
     @staticmethod
     def _sinusoidal(t, A, B, C, D):

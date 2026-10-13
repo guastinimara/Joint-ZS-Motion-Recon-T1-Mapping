@@ -7,63 +7,65 @@ from utils.rr_threshold_functions import (
     update_rr_expansion_and_compute_rr_mask,
 )
 
-
-class _DummyEstimator:
-    def __init__(self) -> None:
-        self.calls = 0
-
-    def fit(self, x_m: torch.Tensor, mask: torch.Tensor):
-        self.calls += 1
-        if self.calls == 1:
-            return torch.tensor([0.0]), torch.tensor([float("nan")])
-        return torch.tensor([1.0]), torch.tensor([2.0])
+# RR index of each dynamic, wrapping around from 10 back to 0
+RR_IDX = torch.tensor([3, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 0, 1, 2])
 
 
-def test_compute_rr_mask_wraparound() -> None:
-    rr_idx = torch.tensor([8, 9, 0, 1, 2])
-    mask = compute_rr_mask(rr_idx=rr_idx, base_idx=9, expansion_offsets=[0, 1])
+class _FakeEstimator:
+    """Stand-in for T1ParameterEstimator: returns NaN until the mask selects at least ``min_frames`` dynamics."""
 
-    expected = torch.tensor([False, True, True, False, False])
-    assert torch.equal(mask, expected)
+    def __init__(self, min_frames: int):
+        self.min_frames = min_frames
+        self.masks = []
 
-
-def test_get_next_expansion_pattern() -> None:
-    assert get_next_expansion([0]) == [0, 1]
-    assert get_next_expansion([0, 1]) == [0, 1, -1]
-    assert get_next_expansion([0, 1, -1]) == [0, 1, -1, 2]
-    assert get_next_expansion([0, 1, -1, 2]) == [0, 1, -1, 2, -2]
+    def fit(self, x, mask=None, recon_params=None):
+        self.masks.append(mask)
+        x_ref = torch.zeros(1) if mask.sum() >= self.min_frames else torch.full((1,), float('nan'))
+        return torch.zeros(3), x_ref
 
 
-def test_update_rr_expansion_and_compute_rr_mask_updates_offsets() -> None:
-    rr_idx = torch.tensor([0, 1, 2, 3, 4])
-    base_idx = 0
-    expansion_offsets = [0, 1]
+def test_get_next_expansion_alternates_positive_and_negative() -> None:
+    expansion = [0]
+    sequence = []
+    for _ in range(4):
+        expansion = get_next_expansion(expansion)
+        sequence.append(expansion)
 
-    mask, updated_offsets = update_rr_expansion_and_compute_rr_mask(
-        rr_idx=rr_idx,
-        base_idx=base_idx,
-        expansion_offsets=expansion_offsets,
+    assert sequence == [[0, 1], [0, 1, -1], [0, 1, -1, 2], [0, 1, -1, 2, -2]]
+
+
+def test_compute_rr_mask_selects_offsets_with_wrap_around() -> None:
+    mask = compute_rr_mask(RR_IDX, base_idx=0, expansion_offsets=[0, -1])
+
+    assert mask.dtype == torch.bool
+    assert torch.equal(mask, (RR_IDX == 0) | (RR_IDX == 10))
+
+
+def test_update_rr_expansion_matches_compute_rr_mask() -> None:
+    mask, expansion = update_rr_expansion_and_compute_rr_mask(RR_IDX, base_idx=3, expansion_offsets=[0, 1])
+
+    assert expansion == [0, 1, -1]
+    assert torch.equal(mask, compute_rr_mask(RR_IDX, 3, [0, 1, -1]))
+
+
+def test_find_valid_rr_threshold_expands_until_fit_succeeds() -> None:
+    # base phase 3: offsets [0] -> 3 frames, [0, 1] -> 5 frames, [0, 1, -1] -> 7 frames
+    estimator = _FakeEstimator(min_frames=7)
+
+    _, x_ref, expansion = find_valid_rr_threshold(
+        RR_IDX, x_m=None, params_estim=estimator, initial_expansion=[0]
     )
 
-    assert updated_offsets == [0, 1, -1]
-    expected_mask = torch.tensor([True, True, False, False, True])
-    assert torch.equal(mask, expected_mask)
+    assert expansion == [0, 1, -1]
+    assert len(estimator.masks) == 3
+    assert not torch.isnan(x_ref).any()
+    assert torch.equal(estimator.masks[-1], compute_rr_mask(RR_IDX, 3, [0, 1, -1]))
 
 
-def test_find_valid_rr_threshold_expands_until_non_nan_fit() -> None:
-    rr_idx = torch.tensor([1, 2, 3, 4])
-    x_m = torch.randn(4, 1)
-    estimator = _DummyEstimator()
+def test_find_valid_rr_threshold_returns_none_when_fit_never_succeeds() -> None:
+    estimator = _FakeEstimator(min_frames=RR_IDX.numel() + 1)
 
-    p_0_ref, x_0_ref, expansion_offsets = find_valid_rr_threshold(
-        rr_idx=rr_idx,
-        x_m=x_m,
-        params_estim=estimator,
-        log_filepath=None,
-        max_attempts=3,
-    )
+    result = find_valid_rr_threshold(RR_IDX, x_m=None, params_estim=estimator, max_attempts=3)
 
-    assert estimator.calls == 2
-    assert expansion_offsets == [0, 1, 2, -2]
-    assert torch.equal(p_0_ref, torch.tensor([1.0]))
-    assert torch.equal(x_0_ref, torch.tensor([2.0]))
+    assert result == (None, None, None)
+    assert len(estimator.masks) == 3
