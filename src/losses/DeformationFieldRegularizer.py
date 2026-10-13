@@ -69,17 +69,18 @@ class DeformationFieldRegularizer:
         Returns:
             Divergence map with shape ``(n, h, w)``.
         """
-        # Follow current axis convention used by this codebase.
+        # Channel 0 displaces along h (y), channel 1 along w (x), as in the SpatialTransformer.
         v_y = disp[:, 0, :, :]
         v_x = disp[:, 1, :, :]
-        
-        d_v_y_dx = v_y[:, :, 1:] - v_y[:, :, :-1]
-        d_v_x_dy = v_x[:, 1:, :] - v_x[:, :-1, :]
 
-        d_v_y_dx = torch.nn.functional.pad(d_v_y_dx, (0, 1, 0, 0))
-        d_v_x_dy = torch.nn.functional.pad(d_v_x_dy, (0, 0, 0, 1))
+        # div(v) = d v_y / dy + d v_x / dx
+        d_v_y_dy = v_y[:, 1:, :] - v_y[:, :-1, :]
+        d_v_x_dx = v_x[:, :, 1:] - v_x[:, :, :-1]
 
-        divergence = d_v_y_dx + d_v_x_dy
+        d_v_y_dy = torch.nn.functional.pad(d_v_y_dy, (0, 0, 0, 1))
+        d_v_x_dx = torch.nn.functional.pad(d_v_x_dx, (0, 1, 0, 0))
+
+        divergence = d_v_y_dy + d_v_x_dx
         return divergence
     
     def divergence_loss(self, disp, mag=False):
