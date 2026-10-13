@@ -33,7 +33,7 @@ With variable splitting, this is solved by alternating two subproblems:
 ```math
 \begin{cases}
 \boldsymbol{\theta}^{*} \in \arg\min_{\boldsymbol{\theta}} \ \mathcal{L}\big(\boldsymbol{\phi}_{\boldsymbol{\theta}},\boldsymbol{\phi}^{-1}_{\boldsymbol{\theta}},\mathbf{x}_{\text{m}},\mathbf{x}_{\text{r}}\big) & \text{(a) motion estimation} \\[4pt]
-\mathbf{p}^{*},\mathbf{x}^{*},\mathbf{c}_j^{*} \in \arg\min_{\mathbf{p},\mathbf{x},\mathbf{c}_j} \ \mathcal{F}\big(\mathbf{p},\mathbf{x},\mathbf{c}_j,\boldsymbol{\phi}_{\boldsymbol{\theta}^{*}}\big) & \text{(b) MoCo reconstruction + T1 fit}
+\mathbf{p}^{*},\mathbf{x}^{*},\mathbf{c}_j^{*} \in \arg\min_{\mathbf{p},\mathbf{x},\mathbf{c}_j} \ \mathcal{F}\big(\mathbf{p},\mathbf{x},\mathbf{c}_j,\boldsymbol{\phi}_{\boldsymbol{\theta}^{*}}\big) & \text{(b) MoCo reconstruction + regularization + T1 fit}
 \end{cases}
 ```
 
@@ -83,7 +83,7 @@ pytest tests
 
 ## Usage
 
-Both entry points run the full pipeline on simulated k-space data, available on
+Both entry points run the full pipeline on simulated k-space data $\mathbf{y}$, available on
 [Zenodo](https://zenodo.org/records/23058873) and downloaded automatically. The data were
 simulated to match the in-vivo acquisition. The anatomy and the cardiac motion come from the
 XCAT framework, and piecewise-constant parameter values are assigned to each tissue. The
