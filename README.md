@@ -160,7 +160,7 @@ proposed method, and the ground-truth reference. This corresponds to Figure X of
 [paper](#citation).
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/REPLACE_WITH_ASSET_ID" width="800"
+  <img src="docs/xcat_t1_results.png" width="800"
        alt="XCAT T1 maps: no motion correction, proposed method, reference">
 </p>
 
