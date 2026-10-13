@@ -10,6 +10,26 @@ reconstructed, with no training data and no ground-truth motion or maps.
 <p align="center"><img src="docs/method_overview.png" width="800"></p>
 -->
 
+## Results on simulated data
+
+Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
+proposed method, and the ground-truth reference. This corresponds to Figure X of the paper
+*TODO: paper title*, by TODO: authors.
+
+<p align="center">
+  <img src="docs/xcat_t1_results.png" width="800"
+       alt="XCAT T1 maps: no motion correction, proposed method, reference">
+</p>
+
+## Citation
+
+> TODO: add once published.
+
+```bibtex
+@article{TODO,
+}
+```
+
 ## Method
 
 The k-space data $`\mathbf{y}`$ are modelled as
@@ -77,16 +97,6 @@ Main dependencies: [PyTorch](https://pytorch.org/) (>= 2.3.1),
 `einops`, `zenodo_get`. Python 3.10 to 3.13 is supported, as required by MRpro. A CUDA GPU is
 strongly recommended. The code falls back to the CPU if none is available.
 
-To check the installation, run the tests from the repository root:
-
-```bash
-pytest tests
-```
-
-If the code runs on the CPU although `nvidia-smi` shows a GPU, the installed PyTorch was
-built for a newer CUDA version than your driver supports (PyTorch prints *"The NVIDIA driver
-on your system is too old"*). Reinstall PyTorch from a matching index URL as shown above.
-
 ## Usage
 
 Both entry points run the full pipeline on simulated k-space data $\mathbf{y}$, available on
@@ -153,17 +163,6 @@ motion_estimation.train_net(x_moving.abs(), x_ref, episodes=40, steps=20, full_l
 See [`main.py`](examples/scripts/main.py) for how these are combined with the SVD regularizer
 and the motion-corrected CG reconstruction in the outer loop.
 
-## Results on simulated data
-
-Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
-proposed method, and the ground-truth reference. This corresponds to Figure X of the
-[paper](#citation).
-
-<p align="center">
-  <img src="docs/xcat_t1_results.png" width="800"
-       alt="XCAT T1 maps: no motion correction, proposed method, reference">
-</p>
-
 ## Repository structure
 
 ```
@@ -178,15 +177,6 @@ src/
 examples/
 ├── notebooks/               # walkthrough notebook
 └── scripts/                 # main.py
-```
-
-## Citation
-
-> TODO: add once published.
-
-```bibtex
-@article{TODO,
-}
 ```
 
 ## License
