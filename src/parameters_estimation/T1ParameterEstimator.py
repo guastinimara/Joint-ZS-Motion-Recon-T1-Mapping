@@ -119,7 +119,8 @@ class T1ParameterEstimator:
                     (0.1, 6.),  # T1 is constrained
                     (math.radians(1), math.radians(9))  # alpha is constrained
                 ),
-                beta_sigmoid=2.0
+                beta_sigmoid=2.0,
+                eps=1e-7
             ).to(x_m.device)
         else:
             constraints_op = ConstraintsOp(
@@ -128,7 +129,8 @@ class T1ParameterEstimator:
                                     recon_params['t1_constraints'],  # T1 is constrained
                                     recon_params['alpha_constraints']  # alpha is constrained
                                 ),
-                                beta_sigmoid=2.0
+                                beta_sigmoid=2.0,
+                                eps=1e-7
                             ).to(x_m.device)
         
         if magnitude_model:
