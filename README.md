@@ -6,20 +6,12 @@ sequentially, the method couples them in a single alternating scheme. Motion fie
 registration network that is fitted **zero-shot** and **unsupervised** to the single scan being
 reconstructed, with no training data and no ground-truth motion or maps.
 
+This repository contains the official implementation of the method described in
+*TODO: paper title*.
+
 <!-- TODO: optional method overview figure
 <p align="center"><img src="docs/method_overview.png" width="800"></p>
 -->
-
-## Results on simulated data
-
-Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
-proposed method, and the ground-truth reference. This corresponds to Figure X of the paper
-*TODO: paper title*, by TODO: authors.
-
-<p align="center">
-  <img src="docs/xcat_t1_results.png" width="800"
-       alt="XCAT T1 maps: no motion correction, proposed method, reference">
-</p>
 
 ## Citation
 
@@ -29,6 +21,16 @@ proposed method, and the ground-truth reference. This corresponds to Figure X of
 @article{TODO,
 }
 ```
+
+## Results on simulated data
+
+Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
+proposed method, and the ground-truth reference. This corresponds to Figure 2 (A) of the paper.
+
+<p align="center">
+  <img src="docs/xcat_t1_results.png" width="800"
+       alt="XCAT T1 maps: no motion correction, proposed method, reference">
+</p>
 
 ## Method
 
@@ -51,10 +53,10 @@ The motion-corrected parameters are then given by
 With variable splitting, this is solved by alternating two subproblems:
 
 ```math
-\begin{cases}
-\boldsymbol{\theta}^{*} \in \arg\min_{\boldsymbol{\theta}} \ \mathcal{L}\big(\boldsymbol{\phi}_{\boldsymbol{\theta}},\boldsymbol{\phi}^{-1}_{\boldsymbol{\theta}},\mathbf{x}_{\text{m}},\mathbf{x}_{\text{r}}\big) & \text{(a) motion estimation} \\[4pt]
-\mathbf{p}^{*},\mathbf{x}^{*},\mathbf{c}_j^{*} \in \arg\min_{\mathbf{p},\mathbf{x},\mathbf{c}_j} \ \mathcal{F}\big(\mathbf{p},\mathbf{x},\mathbf{c}_j,\boldsymbol{\phi}_{\boldsymbol{\theta}^{*}}\big) & \text{(b) MoCo reconstruction + regularization + T1 fit}
-\end{cases}
+\begin{aligned}
+&\min_{\mathbf{p},\mathbf{x},\mathbf{c}_j} \ \mathcal{F}\big(\mathbf{p},\mathbf{x},\mathbf{c}_j,\boldsymbol{\phi}_{\boldsymbol{\theta}^{*}}\big) && \text{(a) MoCo reconstruction + regularization + T1 fit} \\[4pt]
+&\ \text{s.t.} \ \ \boldsymbol{\theta}^{*} \in \arg\min_{\boldsymbol{\theta}} \ \mathcal{L}\big(\boldsymbol{\phi}_{\boldsymbol{\theta}},\boldsymbol{\phi}^{-1}_{\boldsymbol{\theta}},\mathbf{x}_{\text{m}},\mathbf{x}_{\text{r}}\big) && \text{(b) motion estimation}
+\end{aligned}
 ```
 
 Here $`\mathbf{x}_{\text{m}}`$ are the moving dynamics: a plain CG reconstruction of the
