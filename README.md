@@ -95,7 +95,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 pip install -r requirements.txt
 ```
 
-Main dependencies: [PyTorch](https://pytorch.org/) (>= 2.3.1),
+Main dependencies: PyTorch (>= 2.3.1),
 [MRpro](https://github.com/PTB-MR/mrpro) (v0.260420), `numpy`, `scipy`, `matplotlib`,
 `einops`, `zenodo_get`. Python 3.10 to 3.13 is supported, as required by MRpro. A CUDA GPU is
 strongly recommended. The code falls back to the CPU if none is available.
