@@ -9,9 +9,10 @@ reconstructed, with no training data and no ground-truth motion or maps.
 This repository contains the official implementation of the method described in
 *TODO: paper title*.
 
-<!-- TODO: optional method overview figure
-<p align="center"><img src="docs/method_overview.png" width="800"></p>
--->
+<p align="center">
+  <img src="docs/overview_github.png" width="800"
+       alt="Method overview: initialization, iterative motion estimation and MoCo reconstruction, final T1 estimates">
+</p>
 
 ## Citation
 
