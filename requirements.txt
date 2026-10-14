@@ -1,7 +1,8 @@
 # Install a CUDA build of PyTorch first if needed (https://pytorch.org/get-started/locally/),
 # otherwise pip pulls the default build as a dependency of mrpro.
 torch>=2.3.1
-mrpro==0.260420
+# mrpro branch contraintsop_logit, pinned to a fixed commit
+mrpro @ git+https://github.com/PTB-MR/mrpro.git@c20e37d7444bfa864fa07fffbfeabe17cdf08189
 
 numpy
 scipy
