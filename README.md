@@ -5,28 +5,29 @@ cycle**. Instead of solving motion estimation, image reconstruction and parametr
 sequentially, the method couples them in a single alternating scheme. Motion fields come from a
 registration network that is fitted **zero-shot** and **unsupervised** to the single scan being
 reconstructed, with no training data and no ground-truth motion or maps.
-
+<!-- 
 This repository contains the official implementation of the method described in
-*TODO: paper title*.
+*TODO: paper title*. -->
 
 <p align="center">
   <img src="docs/overview_github.png" width="800"
        alt="Method overview: initialization, iterative motion estimation and MoCo reconstruction, final T1 estimates">
 </p>
 
-## Citation
+<!-- ## Citation
 
 > TODO: add once published.
 
 ```bibtex
 @article{TODO,
 }
-```
+``` -->
 
 ## Results on simulated data
 
 Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
-proposed method, and the ground-truth reference. This corresponds to Figure 2 (A) of the paper.
+proposed method, and the ground-truth reference. 
+<!-- This corresponds to Figure 2 (A) of the paper. -->
 
 <p align="center">
   <img src="docs/xcat_t1_results.png" width="800"
