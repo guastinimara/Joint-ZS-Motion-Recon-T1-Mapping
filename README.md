@@ -104,7 +104,7 @@ strongly recommended. The code falls back to the CPU if none is available.
 ## Usage
 
 Both entry points run the full pipeline on simulated k-space data $\mathbf{y}$, available on
-[Zenodo](https://zenodo.org/records/23085535) and downloaded automatically. The data were
+[Zenodo](https://zenodo.org/records/23371727) and downloaded automatically. The data were
 simulated to match the in-vivo acquisition. The anatomy and the cardiac motion come from the
 XCAT framework, and piecewise-constant parameter values are assigned to each tissue. The
 resulting dynamics are deformed with the XCAT motion and sampled with the real acquisition

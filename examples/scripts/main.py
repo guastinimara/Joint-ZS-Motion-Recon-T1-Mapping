@@ -14,7 +14,9 @@ import mrpro
 import torch
 import zenodo_get
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# __file__ is not defined when running interactively, where the working directory is examples/scripts.
+SCRIPT_DIR = Path(__file__).resolve().parent if '__file__' in globals() else Path.cwd()
+REPO_ROOT = SCRIPT_DIR.parents[1]
 sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / 'src')]
 
 from cardiac_motion.MotionEstimationWithInverse import MotionEstimationWithInverse
@@ -28,33 +30,13 @@ from utils.save import save_patient_results
 
 
 # data
-ZENODO_RECORD_ID = '23085535'
+ZENODO_RECORD_ID = '23371727'
 N_LINES_PER_DYNAMIC = 16  # k-space lines per dynamic image
 N_LINES_OVERLAP = 8  # lines shared by consecutive dynamics (sliding window)
 CSM_SMOOTHING_WIDTH = 15
 
 # acquisition parameters of this dataset
-# cardiac phase (RR-interval) index of each of the 54 dynamics.
-RR_IDX = torch.tensor([
-    7, 7, 8, 8, 9, 9, 9, 10, 10, 10, 0, 0, 1, 1, 2, 2, 3, 3,
-    4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9, 9, 10, 10, 10, 0, 0,
-    1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 7, 8, 8, 9, 9,
-], dtype=torch.int64)
-# sampling time of each dynamic after the inversion pulse, relative to the first one (s).
-SAMPLING_TIME = torch.tensor([
-    0.0, 0.0390625, 0.078125, 0.12109375, 0.16015625, 0.19921875,
-    0.23828125, 0.27734375, 0.31640625, 0.35546875, 0.3984375, 0.4375,
-    0.47265625, 0.515625, 0.5546875, 0.59375, 0.6328125, 0.671875,
-    0.7109375, 0.75, 0.79296875, 0.83203125, 0.87109375, 0.91015625,
-    0.94921875, 0.98828125, 1.02734375, 1.06640625, 1.10546875, 1.1484375,
-    1.1875, 1.2265625, 1.265625, 1.3046875, 1.34375, 1.3828125,
-    1.42578125, 1.46484375, 1.5, 1.54296875, 1.58203125, 1.62109375,
-    1.66015625, 1.69921875, 1.73828125, 1.78125, 1.8203125, 1.859375,
-    1.8984375, 1.9375, 1.9765625, 2.015625, 2.0546875, 2.09375,
-], dtype=torch.float32)
-REPETITION_TIME = torch.tensor(0.0049395603, dtype=torch.float32)  # s
 TAU = torch.tensor(0.028, dtype=torch.float32)  # delay after inversion pulse (s)
-NOMINAL_FA = 0.0872664600610733  # nominal flip angle (rad), i.e. 5 degrees
 
 # reconstruction
 N_ITERATIONS = 4
@@ -75,12 +57,13 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # the motion network is trained from a random initialization, so fix the seed to make the run reproducible.
 torch.manual_seed(0)
 
+#%%
 # KData.from_file needs a path, so the download goes to a temporary folder that is deleted after loading.
 with tempfile.TemporaryDirectory() as tmp_dir:
     zenodo_get.download(
         record=ZENODO_RECORD_ID,
         output_dir=tmp_dir,
-        file_glob=('kdata_simul.h5',),
+        file_glob=('kdata_simul.h5', 'rr_idx.pt'),
         timeout=120,  # the default of 15 s is too short behind slow proxies
         retry_attempts=3,
     )
@@ -88,6 +71,8 @@ with tempfile.TemporaryDirectory() as tmp_dir:
         os.path.join(tmp_dir, 'kdata_simul.h5'),
         mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
     ).to(device)
+    # cardiac phase (RR-interval) index of each dynamic.
+    rr_idx = torch.load(os.path.join(tmp_dir, 'rr_idx.pt'))
 
 
 # split k-space data into dynamics
@@ -120,19 +105,15 @@ torch.cuda.empty_cache()
 
 num_dynamics = x_moving.shape[0]
 
-
-t1_parameter_estimator = T1ParameterEstimator(
-    sampling_time=SAMPLING_TIME,
-    repetition_time=REPETITION_TIME,
-    nominal_flip_angle=NOMINAL_FA,
-    device=device,
-    tau=TAU,
-    opt_type='lbfgs',
-)
-
+#%%
+t1_parameter_estimator = T1ParameterEstimator(kdata=kdata_simul_dynamic, 
+                        opt_type='lbfgs',
+                        tau=TAU,
+                        device=device)
+#%%
 # initial T1 parameter fitting with ECG-based mask for motion-compensated references.
 p_0_ref, x_0_ref, rr_expansion_offsets = find_valid_rr_threshold(
-    RR_IDX,
+    rr_idx,
     x_moving,
     t1_parameter_estimator,
 )
@@ -140,7 +121,7 @@ if p_0_ref is None or x_0_ref is None:
     raise RuntimeError('Could not find valid RR threshold.')
 
 # store rr_idx expansion pattern for iterative updates.
-base_rr_idx = RR_IDX[0].item()
+base_rr_idx = rr_idx[0].item()
 current_rr_expansion = rr_expansion_offsets.copy()
 
 mask_roi = MaskImgSize(h_start=70, w_start=68, h_width=100, w_width=100)
@@ -201,7 +182,7 @@ for iteration in range(1, N_ITERATIONS + 1):
 
     # expand the rr_idx selection and compute the mask of the reference dynamics
     mask_ref, current_rr_expansion = update_rr_expansion_and_compute_rr_mask(
-        RR_IDX,
+        rr_idx,
         base_rr_idx,
         current_rr_expansion,
     )
