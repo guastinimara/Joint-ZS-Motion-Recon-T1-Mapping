@@ -13,6 +13,13 @@ This repository contains the official implementation of the method described in
   <img src="docs/overview_github.png" width="800"
        alt="Method overview: initialization, iterative motion estimation and MoCo reconstruction, final T1 estimates">
 </p>
+<p align="center"><em>
+  Overview of the framework. Initialization: conjugate gradient (CG) reconstruction of the
+  moving dynamic and initial registration reference. Iterative process: zero-shot estimation of
+  forward and inverse motion fields, SVD coefficient update by soft-thresholding, motion-corrected
+  CG reconstruction and L-BFGS parametric fitting, followed by a reference update. Output: final
+  motion-corrected parametric maps.
+</em></p>
 
 <!-- ## Citation
 
@@ -25,14 +32,17 @@ This repository contains the official implementation of the method described in
 
 ## Results on simulated data
 
-Output of the notebook on the XCAT phantom: T1 map without motion correction, with the
-proposed method, and the ground-truth reference. 
+Output of the [notebook](examples/notebooks/xcat_motion_corrected_t1.ipynb) on the XCAT phantom.
 <!-- This corresponds to Figure 2 (A) of the paper. -->
 
 <p align="center">
   <img src="docs/xcat_t1_results.png" width="800"
        alt="XCAT T1 maps: no motion correction, proposed method, reference">
 </p>
+<p align="center"><em>
+  T1 maps of the simulated XCAT data: without motion correction (No MoCo), proposed
+  motion-corrected result, and true T1 map (Reference).
+</em></p>
 
 ## Method
 
