@@ -1,4 +1,3 @@
-#%%
 """Joint zero-shot motion estimation, image reconstruction and T1 mapping on simulated XCAT data.
 
 The simulated k-space (kdata_simul.h5) is downloaded from Zenodo. The script alternates
@@ -57,7 +56,6 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # the motion network is trained from a random initialization, so fix the seed to make the run reproducible.
 torch.manual_seed(0)
 
-#%%
 # KData.from_file needs a path, so the download goes to a temporary folder that is deleted after loading.
 with tempfile.TemporaryDirectory() as tmp_dir:
     zenodo_get.download(
@@ -105,12 +103,11 @@ torch.cuda.empty_cache()
 
 num_dynamics = x_moving.shape[0]
 
-#%%
 t1_parameter_estimator = T1ParameterEstimator(kdata=kdata_simul_dynamic, 
                         opt_type='lbfgs',
                         tau=TAU,
                         device=device)
-#%%
+
 # initial T1 parameter fitting with ECG-based mask for motion-compensated references.
 p_0_ref, x_0_ref, rr_expansion_offsets = find_valid_rr_threshold(
     rr_idx,
@@ -272,4 +269,3 @@ if SAVE_RESULTS:
     print(f'Results saved to {OUTPUT_DIR}')
 
 print('Finished processing.')
-# %%
