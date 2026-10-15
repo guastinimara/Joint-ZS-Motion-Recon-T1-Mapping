@@ -34,8 +34,8 @@ N_LINES_PER_DYNAMIC = 16  # k-space lines per dynamic image
 N_LINES_OVERLAP = 8  # lines shared by consecutive dynamics (sliding window)
 CSM_SMOOTHING_WIDTH = 15
 
-# acquisition parameters of this dataset
-TAU = torch.tensor(0.028, dtype=torch.float32)  # delay after inversion pulse (s)
+# acquisition parameter not stored in the k-space header
+TAU = torch.tensor(0.028, dtype=torch.float32)  # inversion pulse -> first dynamic (s), protocol-dependent
 
 # reconstruction
 N_ITERATIONS = 4
@@ -69,7 +69,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
         os.path.join(tmp_dir, 'kdata_simul.h5'),
         mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
     ).to(device)
-    # cardiac phase (RR-interval) index of each dynamic.
+    # cardiac phase (RR-interval bin, from the ECG) of each dynamic.
     rr_idx = torch.load(os.path.join(tmp_dir, 'rr_idx.pt'))
 
 
@@ -103,6 +103,7 @@ torch.cuda.empty_cache()
 
 num_dynamics = x_moving.shape[0]
 
+# timings and flip angle from the k-space header, TAU set by hand
 t1_parameter_estimator = T1ParameterEstimator(kdata=kdata_simul_dynamic, 
                         opt_type='lbfgs',
                         tau=TAU,
