@@ -9,6 +9,8 @@ reconstructed, with no training data and no ground-truth motion or maps.
 This repository contains the official implementation of the method described in
 *TODO: paper title*. -->
 
+<br>
+
 <p align="center">
   <img src="docs/overview_github.png" width="800"
        alt="Method overview: initialization, iterative motion estimation and MoCo reconstruction, final T1 estimates">
@@ -17,8 +19,9 @@ This repository contains the official implementation of the method described in
   Overview of the framework. Initialization: conjugate gradient (CG) reconstruction of the
   moving dynamic and initial registration reference. Iterative process: zero-shot estimation of
   forward and inverse motion fields, SVD coefficient update by soft-thresholding, motion-corrected
-  CG reconstruction and L-BFGS parametric fitting, followed by a reference update. Output: final
-  motion-corrected parametric maps.
+  CG reconstruction and L-BFGS parametric fitting, followed by a reference update; these steps
+  are repeated for a fixed number of iterations. Output: final motion-corrected parametric maps
+  from the last iteration.
 </em></p>
 
 <!-- ## Citation
@@ -32,7 +35,12 @@ This repository contains the official implementation of the method described in
 
 ## Results on simulated data
 
-Output of the [notebook](examples/notebooks/xcat_motion_corrected_t1.ipynb) on the XCAT phantom.
+The results below are fully reproducible with the
+[notebook](examples/notebooks/xcat_motion_corrected_t1.ipynb), which runs the complete pipeline
+on a simulated XCAT phantom with realistic cardiac motion. The simulated k-space data,
+cardiac-phase indices and ground-truth maps are publicly available on
+[Zenodo](https://doi.org/10.5281/zenodo.23388965) and are downloaded automatically by the
+notebook.
 <!-- This corresponds to Figure 2 (A) of the paper. -->
 
 <p align="center">
