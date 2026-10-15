@@ -30,7 +30,7 @@ from utils.save import save_patient_results
 
 
 # data
-ZENODO_RECORD_ID = '23372515'
+ZENODO_RECORD_ID = '23388965'
 N_LINES_PER_DYNAMIC = 16  # k-space lines per dynamic image
 N_LINES_OVERLAP = 8  # lines shared by consecutive dynamics (sliding window)
 CSM_SMOOTHING_WIDTH = 15
